@@ -1,5 +1,14 @@
 ## node-osrm changelog
 
+### 0.2.7
+
+ - Fixed tag validation
+
+### 0.2.6
+
+ - Pull binaries from https
+ - Upgraded to node-pre-gyp@0.4.0
+
 ### 0.2.5
 
  - Updated OSRM to 40517e3010757bdbb
