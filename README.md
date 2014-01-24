@@ -162,19 +162,21 @@ Ensure Travis.ci [builds are passing](https://travis-ci.org/DennisOSRM/node-osrm
 
 Tag a new release:
 
-    git tag v0.3.0 -m "Tagging v0.3.0
+    git add CHANGELOG.md package.json
+    git commit -m "Tagging v0.3.0"
+    git tag v0.3.0
 
 **5)** Push the tag to github:
 
-    git push --tags
+    git push origin master v0.3.0
 
 This will trigger travis.ci to build Ubuntu binaries and publish the entire package to the npm registry upon success. The publishing will use the s3 and npm auth credentials of @springmeyer currently - this needs to be made more configurable in the future.
 
-**6)** Merge `master` into the `osx` branch
+**6)** Merge into the `osx` branch
 
     git checkout osx
-    git pull origin master --no-commit
-    git commit -a -m "[publish-binary]"
+    git merge v0.3.0 -m "[publish-binary]"
+    git push origin osx
 
 This will build and publish OS X binaries on travis.ci. Be prepared to watch the travis run and re-start builds that fail due to timeouts (the OS X machines are underpowered).
 
