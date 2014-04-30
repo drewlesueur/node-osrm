@@ -9,8 +9,8 @@ env:
    - NODE_NVM_VERSION="0.10" RUN_BUILD="shared_build"
    - NODE_NVM_VERSION="0.8" RUN_BUILD="shared_build"
   global:
-   - secure: LvrV5lifkIM99Wz0G0jqxC3uqGYIYz4hgM0oeB0MsPmQ62l8+CfIURqcFlfKSb+0s0YP2mAeacSno8oTpSZoWP27sTJutYmyk0jeVUHKQqwQClkloeErOfyLVnYijUTAX/J1Blgl+fhfvGtZE/dBIk/XEa6tEKmF0kv7z6GKVz8=
-   - secure: hNMAfx4uCD8P5ycw7en9WbPFxd9Z4i8LmuClPC6lYYBTf/3lsHbtO5oRVmqFQevlZbFoPt1OU1pr4Pnj7iQsYnezc3YBevXQNsv0UvMlQAzwmW2cQOuRjHZ5TXEEMAQBbiWO0BOeQrC6m46wkQbkuzX1XpxRnaXhdhd/FeZxVwk=
+   - secure: KitzGZjoDblX/3heajcvssGz0JnJ/k02dr2tu03ksUV+6MogC3RSQudqyKY57+f8VyZrcllN/UOlJ0Q/3iG38Oz8DljC+7RZxtkVmE1SFBoOezKCdhcvWM12G3uqPs7hhrRxuUgIh0C//YXEkulUrqa2H1Aj2xeen4E3FAqEoy0=
+   - secure: WLGmxl6VTVWhXGm6X83GYNYzPNsvTD+9usJOKM5YBLAdG7cnOBQBNiCCUKc9OZMMZVUr3ec2/iigakH5Y8Yc+U6AlWKzlORyqWLuk4nFuoedu62x6ocQkTkuOc7mHiYhKd21xTGMYauaZRS6kugv4xkpGES2UjI2T8cjZ+LN2jU=
    - secure: Atz+Zcl9Faw1OvUEv5vK3aYXGWQS8dvDd4nLQ/2XU0doVKjsNvFxVWtBFvE91yvbnJnkSR6IrD6U4I3RQkmaEZ4s37nipHZ1nkuPlSucV0SamAwOcO4Wm+D0yrlPAt/bDQHlAojY1UE98U0oqDKfkBvLwdzIGvv0qISR/W/8rLI=
 
 before_install:
@@ -35,15 +35,14 @@ install:
 - if [[ $RUN_BUILD == "static_build" ]]; then PACKAGE_COMMAND_LINE_TOOLS=true; TMP_DEPS_DIR=`mktemp -d -t XXXXXXXXXXX`; fi;
 - NODE_MODULE_ROOT=`pwd`
 - export OSRM_BRANCH="develop"
-- export OSRM_COMMIT="40517e3010757bdbb"
+- export OSRM_COMMIT="a1ecab2f95b8bb157b03f49bd067099c9dc8664c"
+- export OSRM_REPO="https://github.com/DennisOSRM/Project-OSRM.git"
 # WARNING: this script modifies the environment
 - source ./scripts/${RUN_BUILD}.sh
 - cd ${NODE_MODULE_ROOT}
 
 before_script:
 - npm install mocha
-
-before_script:
 # install from source, ensure this works first
 - npm install --build-from-source
 - if [[ `uname -s` == 'Darwin' ]]; then otool -L ./lib/binding/* || true; fi
@@ -73,20 +72,3 @@ script:
 - if [[ $INSTALL_RESULT != 0 ]]; then echo "returned $INSTALL_RESULT";node-pre-gyp unpublish;false; fi
 # If success then we arrive here so lets clean up
 - node-pre-gyp clean
-
-after_success:
-# Now finally, all of the above succeeded!
-# It's time to auto-publish to npm if this is
-# a tag or the commit has the [publish] keyword
-# Note: we only allow publishing for "static_build" since
-# that is the only portable method of building
-- PUBLISH=false
-- npm config set email dane@dbsgeo.com
-- npm config set _auth $NPM_AUTH
-- echo $RUN_BUILD
-- echo $NODE_VERSION
-- echo $NODE_NVM_VERSION
-- echo `git show -s --format=%B $TRAVIS_COMMIT | tr -d '\n'`
-- if [[ $RUN_BUILD == "static_build" ]] && [[ $NODE_NVM_VERSION == "0.8" ]] && test "${COMMIT_MESSAGE#*'[publish]'}" != "$COMMIT_MESSAGE"; then echo "publish"; PUBLISH=true; fi;
-- if [[ $RUN_BUILD == "static_build" ]] && [[ $NODE_NVM_VERSION == "0.8" ]] && [[ $TRAVIS_BRANCH == `git describe --tags --always HEAD` ]]; then echo "publish"; PUBLISH=true; fi;
-- if [[ $PUBLISH == true ]]; then echo "publishing"; npm publish; fi;

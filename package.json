@@ -4,7 +4,7 @@
     "url": "https://github.com/DennisOSRM/Project-OSRM",
     "homepage": "http://project-osrm.org",
     "author": "Dane Springmeyer <springmeyer>",
-    "version": "0.2.8",
+    "version": "0.9.0",
     "main": "./lib/osrm.js",
     "bugs": {
         "email": "dane@mapbox.com",
@@ -21,11 +21,11 @@
     "binary": {
         "module_name": "osrm",
         "module_path": "./lib/binding/",
-        "remote_uri": "https://node-osrm.s3.amazonaws.com",
-        "template": "{module_name}-v{version}-{node_abi}-{platform}-{arch}.tar.gz"
+        "host": "https://mapbox-node-binary.s3.amazonaws.com",
+        "remote_path" : "./{module_name}/"
     },
     "dependencies": {
-        "node-pre-gyp": "~0.4.0"
+        "node-pre-gyp": "0.5.x"
     },
     "bundledDependencies":["node-pre-gyp"],
     "licenses": [

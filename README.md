@@ -27,6 +27,10 @@ However other platforms will fall back to a source compile: see [Source Build](#
 
 # Usage
 
+See the `example/server.js` and `test/osrm.test.js` for examples of using OSRM through this Node.js API.
+
+# Setup
+
 The `node-osrm` module consumes data processed by OSRM core.
 
 This repository contains a Makefile that does this automatically:
@@ -44,39 +48,52 @@ Once that is done then you can calculate routes in Javascript like:
 ```js
 // Note: to require osrm locally do:
 // require('./lib/osrm.js')
-var osrm = require('osrm')
-var opts = new osrm.Options("./test/data/berlin.ini");
-var engine = new osrm.Engine(opts);
-var query = new osrm.Query({coordinates: [[52.519930,13.438640], [52.513191,13.415852]]});
-var sync_result = engine.run(query);
-JSON.parse(engine.run(query));
-{ status: 0,
-  status_message: 'Found route between points',
-  route_geometry: '{~pdcBmjfsXsBrD{KhS}DvHyApCcf@l}@kg@z|@_MbX|GjHdXh^fm@dr@~\\l_@pFhF|GjCfeAbTdh@fFqRp}DoEn\\cHzR{FjLgCnFuBlG{AlHaAjJa@hLXtGnCnKtCnFxCfCvEl@lHBzA}@vIoFzCs@|CcAnEQ~NhHnf@zUpm@rc@d]zVrTnTr^~]xbAnaAhSnPgJd^kExPgOzk@maAx_Ek@~BuKvd@cJz`@oAzFiAtHvKzAlBXzNvB|b@hGl@Dha@zFbGf@fBAjQ_AxEbA`HxBtPpFpa@rO_Cv_B_ZlD}LlBGB',
-  route_instructions: 
-   [ ... ],
-  route_summary: 
-   { total_distance: 2814,
-     total_time: 211,
-     start_point: 'Friedenstraße',
-     end_point: 'Am Köllnischen Park' },
-  alternative_geometries: [],
-  alternative_instructions: [],
-  alternative_summaries: [],
-  route_name: 
-   [ 'Lichtenberger Straße',
-     'Holzmarktstraße' ],
-  alternative_names: [ [ '', '' ] ],
-  via_points: 
-   [ [ 52.519934, 13.438647 ],
-     [ 52.513162, 13.415509 ] ],
-  via_indices: [ 0, 69 ],
-  alternative_indices: [],
-  hint_data: 
-   { checksum: 222545162,
-     locations: 
-      [ '9XkCAJgBAAAtAAAA____f7idcBkPGuw__mMhA7cOzQA',
-        'TgcEAFwFAAAAAAAAVAAAANIeb5DqBHs_ikkhA1W0zAA' ] } }
+var OSRM = require('osrm')
+var osrm = new OSRM("berlin-latest.osrm");
+
+osrm.locate([52.4224,13.333086], function (err, result) {
+  console.log(result);
+  // Output: {"status":0,"mapped_coordinate":[52.422442,13.332101]}
+});
+
+osrm.nearest([52.4224, 13.333086], function (err, result) {
+  console.log(result);
+  // Output: {"status":0,"mapped_coordinate":[52.422590,13.333838],"name":"Mariannenstraße"}
+});
+
+var query = {coordinates: [[52.519930,13.438640], [52.513191,13.415852]]};
+osrm.route(query, function (err, result) {
+  console.log(result);
+  /* Output:
+    { status: 0,
+      status_message: 'Found route between points',
+      route_geometry: '{~pdcBmjfsXsBrD{KhS}DvHyApCcf@l}@kg@z|@_MbX|GjHdXh^fm@dr@~\\l_@pFhF|GjCfeAbTdh@fFqRp}DoEn\\cHzR{FjLgCnFuBlG{AlHaAjJa@hLXtGnCnKtCnFxCfCvEl@lHBzA}@vIoFzCs@|CcAnEQ~NhHnf@zUpm@rc@d]zVrTnTr^~]xbAnaAhSnPgJd^kExPgOzk@maAx_Ek@~BuKvd@cJz`@oAzFiAtHvKzAlBXzNvB|b@hGl@Dha@zFbGf@fBAjQ_AxEbA`HxBtPpFpa@rO_Cv_B_ZlD}LlBGB',
+      route_instructions:
+       [ ... ],
+      route_summary:
+       { total_distance: 2814,
+         total_time: 211,
+         start_point: 'Friedenstraße',
+         end_point: 'Am Köllnischen Park' },
+      alternative_geometries: [],
+      alternative_instructions: [],
+      alternative_summaries: [],
+      route_name:
+       [ 'Lichtenberger Straße',
+         'Holzmarktstraße' ],
+      alternative_names: [ [ '', '' ] ],
+      via_points:
+       [ [ 52.519934, 13.438647 ],
+         [ 52.513162, 13.415509 ] ],
+      via_indices: [ 0, 69 ],
+      alternative_indices: [],
+      hint_data:
+       { checksum: 222545162,
+         locations:
+          [ '9XkCAJgBAAAtAAAA____f7idcBkPGuw__mMhA7cOzQA',
+            'TgcEAFwFAAAAAAAAVAAAANIeb5DqBHs_ikkhA1W0zAA' ] } }
+  */
+});
 ```
 
 # Source Build
@@ -86,12 +103,6 @@ To build from source you will need:
  - OSRM `develop` branch, cloned from github.
  - OSRM build with `-DWITH_TOOLS=1` so that `libOSRM` is created
  - Lua, luabind, and stxxl headers
-
-To build with OS X Mavericks you need to ensure the bindings link to `libc++`. An easy way to do this is to set:
-
-    export CXXFLAGS=-mmacosx-version-min=10.9
-
-before building `node-osrm`.
 
 ### Building
 
@@ -112,7 +123,7 @@ Then build `node-osrm` against `Project-OSRM` installed in `/usr/local`:
 
     git clone https://github.com/DennisOSRM/node-osrm.git
     cd node-osrm
-    npm install
+    npm install --build-from-source
 
 
 # Developing
@@ -160,26 +171,50 @@ Ensure Travis.ci [builds are passing](https://travis-ci.org/DennisOSRM/node-osrm
 Tag a new release:
 
     git add CHANGELOG.md package.json
-    git commit -m "Tagging v0.3.0"
-    git tag v0.3.0
+    git commit -m "Tagging v0.2.8"
+    git tag v0.2.8
 
 **5)** Push the tag to github:
 
-    git push origin master v0.3.0
+    git push origin master v0.2.8
 
 This will trigger travis.ci to build Ubuntu binaries and publish the entire package to the npm registry upon success. The publishing will use the s3 and npm auth credentials of @springmeyer currently - this needs to be made more configurable in the future.
 
 **6)** Merge into the `osx` branch
 
     git checkout osx
-    git merge v0.3.0 -m "[publish binary]"
+    git merge v0.2.8 -m "[publish binary]"
     git push origin osx
 
 This will build and publish OS X binaries on travis.ci. Be prepared to watch the travis run and re-start builds that fail due to timeouts (the OS X machines are underpowered).
 
-**7)** You are done
+**7)** Check published binaries
 
-If the travis builds succeeded then you can rest assured the binaries are working since they not only publish but also test installing from what they published.
+If travis builds passed for both the `master` branch and the `osx` branch then binaries should be published for both platforms.
 
-Now go ahead and use the new tag in your applications `package.json` as a dependency and you will get binaries rather than needing a source compile.
+Confirm the remote binaries are available with node-pre-gyp:
 
+    $ npm install node-pre-gyp # or use the copy in ./node_modules/.bin
+    $ node-pre-gyp info --loglevel silent | grep `node -e "console.log(require('./package.json').version)"`
+    osrm-v0.2.8-node-v11-darwin-x64.tar.gz
+    osrm-v0.2.8-node-v11-linux-x64.tar.gz
+    osrm-v0.2.8-v8-3.11-darwin-x64.tar.gz
+    osrm-v0.2.8-v8-3.11-linux-x64.tar.gz
+
+**9)** Publish node-osrm
+
+Publish `node-osrm`
+
+    npm publish
+
+Dependent apps can now pull from the npm registry like:
+
+    "dependencies": {
+        "osrm": "~0.2.8"
+    }
+
+Or can still pull from the github tag like:
+
+    "dependencies": {
+        "osrm": "https://github.com/DennisOSRM/node-osrm/tarball/v0.2.8"
+    }

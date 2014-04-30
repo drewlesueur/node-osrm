@@ -1,85 +1,99 @@
-var osrm = require('../');
+var OSRM = require('../');
 var assert = require('assert');
 
-describe('osrm', function() {
+it('throws if new keyword is not used', function(done) {
+    assert.throws(function() { OSRM(); },
+      /Cannot call constructor as function, you need to use 'new' keyword/);
+    done();
+});
 
-    it('should throw if new keyword is not used', function(done) {
-        assert.throws(function() { osrm.Options(); },
-          /Cannot call constructor as function, you need to use 'new' keyword/);
-        assert.throws(function() { osrm.Query(); },
-          /Cannot call constructor as function, you need to use 'new' keyword/);
-        assert.throws(function() { osrm.Engine(); },
-          /Cannot call constructor as function, you need to use 'new' keyword/);
+it('throws if necessary files do not exist', function(done) {
+    assert.throws(function() { new OSRM("missing.osrm"); },
+        /hsgr file does not exist/);
+    done();
+});
+
+it('throws if insufficient coordinates given', function() {
+    var engine = new OSRM("berlin-latest.osrm");
+    assert.throws(function () { engine.route({coordinates: []}, function(err) {}) });
+});
+
+it('routes Berlin', function(done) {
+    var osrm = new OSRM("berlin-latest.osrm");
+    osrm.route({coordinates: [[52.519930,13.438640], [52.513191,13.415852]]}, function(err, route) {
+        assert.ifError(err);
+        assert.equal(route.status_message, 'Found route between points');
         done();
     });
+});
 
-    it('should throw if invalid args are passed', function(done) {
-        assert.throws(function() { new osrm.Options(99999); },
-        /OSRM config path must be a string/);
+it.skip('routes Berlin using shared memory', function(done) {
+    var osrm = new OSRM();
+    osrm.route({coordinates: [[52.519930,13.438640], [52.513191,13.415852]]}, function(err, route) {
+        assert.ifError(err);
+        assert.equal(route.status_message, 'Found route between points');
         done();
     });
+});
 
-    it.skip('should throw if ini file is blank', function(done) {
-        assert.throws(function() { new osrm.Options("./test/data/bogus.ini"); },
-        /\.\/test\/data\/bogus.ini is empty/);
+it('routes Berlin with options', function(done) {
+    var osrm = new OSRM("berlin-latest.osrm");
+    var options = {
+        coordinates: [[52.519930,13.438640], [52.513191,13.415852]],
+        zoomLevel: 17,
+        alternateRoute: false,
+        printInstructions: false
+    };
+    osrm.route(options, function(err, route) {
+        assert.ifError(err);
+        assert.equal(route.status_message,'Found route between points');
+        assert.equal(0, route.route_instructions.length);
+        assert.equal(0, route.alternative_geometries.length);
         done();
     });
+});
 
-    // @TODO - should provide better error:
-    // https://github.com/DennisOSRM/Project-OSRM/commit/34735b8aad06098d09d3fb907137697799a281e4#commitcomment-3809465
-    it.skip('should throw if ini file does not exist', function(done) {
-        assert.throws(function() { new osrm.Options("doesnotexist.ini"); },
-        /doesnotexist.ini not found/);
-        done();
-    });
+it('routes Berlin with hints', function(done) {
+    var osrm = new OSRM("berlin-latest.osrm");
+    var options = {
+        coordinates: [[52.519930,13.438640], [52.513191,13.415852]],
+        alternateRoute: false,
+        printInstructions: false
+    };
+    osrm.route(options, function(err, first) {
+        assert.ifError(err);
+        assert.equal(first.status_message, 'Found route between points');
+        var checksum = first.hint_data.checksum;
+        assert.equal("number", typeof(checksum));
 
-    it.skip('should throw if files referenced by ini do not exist', function(done) {
-        assert.throws(function() { new osrm.Options("./test/data/references-missing-files.ini"); },
-        /doesnotexist.hsgr not found/);
-        done();
-    });
+        options.hints = first.hint_data.locations;
+        options.checksum = checksum;
 
-    it.skip('should throw if ini references corrupt files', function(done) {
-        assert.throws(function() { new osrm.Options("./test/data/references-corrupt-files.ini"); },
-        /hsgr file is empty/);
-        done();
-    });
-
-    it('should be initialized', function(done) {
-        var opts = new osrm.Options("./test/data/berlin.ini");
-        assert.ok(opts);
-        done();
-    });
-
-    it('should throw if insufficient coordinates given', function() {
-        assert.throws(function() {
-            new osrm.Query({coordinates: []});
-        });
-    });
-
-    it('should return results for berlin using sync api', function(done) {
-        var opts = new osrm.Options("./test/data/berlin.ini");
-        var engine = new osrm.Engine(opts);
-        var query = new osrm.Query({coordinates: [[52.519930,13.438640], [52.513191,13.415852]]});
-        var sync_result = engine.run(query);
-        engine.run(query,function(err,async_result) {
-            assert.equal(sync_result,async_result);
-            var result_json = JSON.parse(async_result);
-            assert.equal(result_json.status_message,'Found route between points');
+        osrm.route(options, function(err, second) {
+            assert.ifError(err);
+            assert.deepEqual(first, second);
             done();
         });
     });
+});
 
-    it('should return results for berlin using sync api and shared memory', function(done) {
-        var opts = new osrm.Options("./test/data/berlin.ini",true);
-        var engine = new osrm.Engine(opts);
-        var query = new osrm.Query({coordinates: [[52.519930,13.438640], [52.513191,13.415852]]});
-        var sync_result = engine.run(query);
-        engine.run(query,function(err,async_result) {
-            assert.equal(sync_result,async_result);
-            var result_json = JSON.parse(async_result);
-            assert.equal(result_json.status_message,'Found route between points');
-            done();
-        });
+it('nearest', function(done) {
+    var osrm = new OSRM("berlin-latest.osrm");
+    osrm.nearest([52.4224, 13.333086], function(err, result) {
+        assert.ifError(err);
+        assert.equal(result.status, 0);
+        assert.equal(result.mapped_coordinate.length, 2);
+        assert(result.hasOwnProperty('name'));
+        done();
+    });
+});
+
+it('locate', function(done) {
+    var osrm = new OSRM("berlin-latest.osrm");
+    osrm.locate([52.4224, 13.333086], function(err, result) {
+        assert.ifError(err);
+        assert.equal(result.status, 0);
+        assert.equal(result.mapped_coordinate.length, 2);
+        done();
     });
 });
