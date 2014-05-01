@@ -156,8 +156,6 @@ Releasing a new version of `node-osrm` is mostly automated using travis.ci.
 
 This is configurable via the `OSRM_BRANCH` and `OSRM_COMMIT` variables in travis.ci.
 
-See [Issue 36](https://github.com/DennisOSRM/node-osrm/issues/36) for further ideas on streamlining this.
-
 **2)** Bump node-osrm version
 
 Update the `CHANGELOG.md` and the `package.json` version.
@@ -194,8 +192,7 @@ If travis builds passed for both the `master` branch and the `osx` branch then b
 
 Confirm the remote binaries are available with node-pre-gyp:
 
-    $ npm install node-pre-gyp # or use the copy in ./node_modules/.bin
-    $ node-pre-gyp info --loglevel silent | grep `node -e "console.log(require('./package.json').version)"`
+    $ ./node_modules/.bin/node-pre-gyp info --loglevel silent | grep `node -e "console.log(require('./package.json').version)"`
     osrm-v0.2.8-node-v11-darwin-x64.tar.gz
     osrm-v0.2.8-node-v11-linux-x64.tar.gz
     osrm-v0.2.8-v8-3.11-darwin-x64.tar.gz
